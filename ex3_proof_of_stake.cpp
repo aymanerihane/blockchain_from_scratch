@@ -1,17 +1,12 @@
+#include "ex3_proof_of_stake.h"
 #include <iostream>
-#include <vector>
 #include <random>
 #include <ctime>
-#include <map>
-
-struct Validator {
-    std::string name;
-    int stake;
-};
 
 std::string selectValidator(const std::vector<Validator>& validators) {
     int totalStake = 0;
     for (const auto& v : validators) totalStake += v.stake;
+    if (totalStake == 0) return ""; // Avoid division by zero
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(1, totalStake);
@@ -21,20 +16,7 @@ std::string selectValidator(const std::vector<Validator>& validators) {
         sum += v.stake;
         if (r <= sum) return v.name;
     }
-    return validators.back().name;
+    return validators.back().name; // Should not be reached if totalStake > 0
 }
 
-int main() {
-    std::vector<Validator> validators = {
-        {"Alice", 10},
-        {"Bob", 30},
-        {"Charlie", 60}
-    };
-    std::cout << "Selecting validator (PoS)...\n";
-    clock_t start = clock();
-    std::string winner = selectValidator(validators);
-    clock_t end = clock();
-    std::cout << "Selected validator: " << winner << std::endl;
-    std::cout << "Time taken: " << double(end - start) / CLOCKS_PER_SEC << " seconds" << std::endl;
-    return 0;
-}
+

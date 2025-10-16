@@ -1,47 +1,23 @@
-// Basic Merkle Tree for transaction hashes
+#include "ex1_merkle_tree.h"
+#include "sha256.h"
 #include <iostream>
-#include <vector>
-#include <string>
-#include <openssl/sha.h>
 
-std::string sha256(const std::string& str) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, str.c_str(), str.size());
-    SHA256_Final(hash, &sha256);
-    char outputBuffer[65];
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
-    outputBuffer[64] = 0;
-    return std::string(outputBuffer);
-}
+std::string buildMerkleRoot(const std::vector<std::string>& leaves) {
+    if (leaves.empty()) return "";
+    if (leaves.size() == 1) return leaves[0];
 
-class MerkleTree {
-public:
-    std::string root;
-    MerkleTree(const std::vector<std::string>& leaves) {
-        root = buildTree(leaves);
-    }
-    static std::string buildTree(std::vector<std::string> leaves) {
-        if (leaves.empty()) return "";
-        while (leaves.size() > 1) {
-            if (leaves.size() % 2 != 0) leaves.push_back(leaves.back());
-            std::vector<std::string> newLevel;
-            for (size_t i = 0; i < leaves.size(); i += 2) {
-                newLevel.push_back(sha256(leaves[i] + leaves[i+1]));
-            }
-            leaves = newLevel;
+    std::vector<std::string> current_level = leaves;
+    while (current_level.size() > 1) {
+        if (current_level.size() % 2 != 0) {
+            current_level.push_back(current_level.back());
         }
-        return leaves[0];
+        std::vector<std::string> next_level;
+        for (size_t i = 0; i < current_level.size(); i += 2) {
+            next_level.push_back(sha256(current_level[i] + current_level[i+1]));
+        }
+        current_level = next_level;
     }
-};
-
-int main() {
-    std::vector<std::string> txs = {"tx1", "tx2", "tx3", "tx4"};
-    std::vector<std::string> hashes;
-    for (const auto& tx : txs) hashes.push_back(sha256(tx));
-    MerkleTree tree(hashes);
-    std::cout << "Merkle Root: " << tree.root << std::endl;
-    return 0;
+    return current_level[0];
 }
+
+
